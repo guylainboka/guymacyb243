@@ -1,0 +1,107 @@
+# Guymacyb243 — GitHub Actions : build Windows .exe
+name: Build Windows .exe
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Guymacyb243-Setup.exe (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          bun install || npm install --no-audit --no-fund
+          if [ ! -f package-lock.json ]; then npm install --package-lock-only --no-audit --no-fund || true; fi
+
+      - name: Build frontend (Vite)
+        run: bun run build || npx vite build
+        env:
+          NODE_ENV: production
+
+      - name: Bundle backend (esbuild)
+        run: node desktop/build-server-bundle.js
+
+      - name: Verify backend bundle
+        shell: bash
+        run: |
+          ls -la dist-server/
+          test -f dist-server/server.cjs && echo "server.cjs OK"
+          test -f dist-server/sql-wasm.wasm && echo "sql-wasm.wasm OK"
+
+      - name: Build + sign .exe installer (electron-builder)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win nsis --x64
+
+      - name: Verify installer
+        shell: bash
+        run: |
+          ls -la dist_electron/
+          EXE=$(find dist_electron -name "*.exe" -type f | head -1)
+          if [ -z "$EXE" ]; then echo "Aucun .exe trouvé"; exit 1; fi
+          echo "Installateur généré: $EXE"
+          ls -lh "$EXE"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: Guymacyb243-Setup-windows-x64
+          path: dist_electron/*.exe
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist_electron/*.exe
+          name: Guymacyb243 ${{ github.ref_name }}
+          body: |
+            ## Guymacyb243 ${{ github.ref_name }}
+
+            ### Téléchargement
+            - **Guymacyb243-Setup-${{ github.ref_name }}.exe** — Installateur Windows 10/11 (x64)
+
+            ### Installation
+            1. Téléchargez `Guymacyb243-Setup-*.exe`
+            2. Double-cliquez (NSIS wizard)
+            3. Au premier lancement, l'assistant installe WSL 2 + Docker + outils Linux
+            4. L'application s'ouvre — 4 parties : Wi-Fi / Sites & Apps / Laboratoire / Core Manager
+
+            ### Architecture
+            - Electron + React + TypeScript (frontend natif Windows)
+            - Backend Express (Node.js, bundlé en server.cjs)
+            - WSL 2 pour exécuter les outils Kali Linux (nmap, nikto, sqlmap, aircrack-ng)
+            - Docker pour le Laboratoire (DVWA, Juice Shop, Metasploitable)
+            - Terminaux natifs via node-pty (PowerShell, CMD, bash WSL)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+:root {
+  --bg: #0a0e18;
+  --panel: #11141f;
+  --panel-2: #171b26;
+  --border: #1f2533;
+  --text: #dfe2f1;
+  --muted: #8c909f;
+  --primary: #4d8eff;
+  --cyan: #4cd7f6;
+  --green: #10b981;
+  --amber: #fbbf24;
+  --red: #ef4444;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Scrollbar discrète */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a3142; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4255; }
+
+/* xterm */
+.xterm { padding: 8px; height: 100%; }
+.xterm-viewport { background: #060912 !important; }
+
+/* Animations utilitaires */
+@keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fade-in 0.2s ease-out; }

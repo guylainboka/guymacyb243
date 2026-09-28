@@ -1,0 +1,51 @@
+# Guymacyb243 — electron-builder config
+appId: com.guymacyb243.desktop
+productName: Guymacyb243
+copyright: Copyright (c) 2024 Guyma Cyb Security Systems
+
+directories:
+  output: dist_electron
+  buildResources: desktop/assets
+
+# Fichiers embarqués dans app.asar (processus principal Electron uniquement)
+files:
+  - desktop/electron-main.cjs
+  - desktop/preload.cjs
+  - desktop/setup-preload.cjs
+  - desktop/wizard.html
+  - package.json
+
+# extraResources : fichiers réels déballés sous process.resourcesPath
+# (accessibles par le serveur Express enfant + node-pty)
+extraResources:
+  - from: dist
+    to: dist
+    filter: ["**/*"]
+  - from: dist-server
+    to: dist-server
+    filter: ["**/*"]
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: desktop/assets/icon.ico
+  signingHashAlgorithms: [sha256]
+  signAndEditExecutable: true
+  rfc3161TimeStampServer: http://timestamp.digicert.com
+  timeStampServer: http://timestamp.digicert.com
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Guymacyb243
+  uninstallDisplayName: Guymacyb243
+  artifactName: Guymacyb243-Setup-v${version}.exe
+  displayLanguageSelector: true
+  installerLanguages: [en_US, fr_FR]
+
+compression: maximum
+buildVersion: 1.0.0

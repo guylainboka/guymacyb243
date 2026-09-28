@@ -1,0 +1,26 @@
+# Guymacyb243 — Caddyfile
+# Le backend Express écoute sur 127.0.0.1:3001 ; Caddy expose sur :81 et
+# route /api et /socket.io vers le backend, le reste vers le frontend Vite (5173 en dev).
+:81 {
+	@transform_port_query {
+		query XTransformPort=*
+	}
+
+	handle @transform_port_query {
+		reverse_proxy localhost:{query.XTransformPort} {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	handle {
+		reverse_proxy localhost:5173 {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}
